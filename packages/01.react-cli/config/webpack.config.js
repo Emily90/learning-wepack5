@@ -104,6 +104,7 @@ module.exports = function (webpackEnv) {
   // common function to get style loaders
   const getStyleLoaders = (cssOptions, preProcessor) => {
     const loaders = [
+      // require.resolve 快速解析绝对路径。不需要查。性能快一点。
       isEnvDevelopment && require.resolve('style-loader'),
       isEnvProduction && {
         loader: MiniCssExtractPlugin.loader,
@@ -113,6 +114,7 @@ module.exports = function (webpackEnv) {
           ? { publicPath: '../../' }
           : {},
       },
+      // 样式整理到js中
       {
         loader: require.resolve('css-loader'),
         options: cssOptions,
@@ -306,6 +308,7 @@ module.exports = function (webpackEnv) {
       // Automatically split vendor and commons
       // https://twitter.com/wSokra/status/969633336732905474
       // https://medium.com/webpack/webpack-4-code-splitting-chunk-graph-and-the-splitchunks-optimization-be739a861366
+      // 假如超过20kb，或者使用 import 时，单独打包成单文件
       splitChunks: {
         chunks: 'all',
         name: false,
@@ -313,6 +316,8 @@ module.exports = function (webpackEnv) {
       // Keep the runtime chunk separated to enable long term caching
       // https://twitter.com/wSokra/status/969679223278505985
       // https://github.com/facebook/create-react-app/issues/5358
+      // 缓存，hash ， A 文件依赖B文件。修改B文件时，hash 变化。A文件也会hash失效。
+      // 将A文件保存B文件hash值时，保存到runtime中，如果B变化时，= B + runtime 变化。
       runtimeChunk: {
         name: entrypoint => `runtime-${entrypoint.name}`,
       },
@@ -348,12 +353,14 @@ module.exports = function (webpackEnv) {
       plugins: [
         // Adds support for installing with Plug'n'Play, leading to faster installs and adding
         // guards against forgotten dependencies and such.
+        // webpack 5 内置了
         PnpWebpackPlugin,
         // Prevents users from importing files from outside of src/ (or node_modules/).
         // This often causes confusion because we only process files within src/ with babel.
         // To fix this, we prevent you from importing files out of src/ -- if you'd like to,
         // please link the files into your node_modules/ and let module-resolution kick in.
         // Make sure your source files are compiled, as they will not be processed in any way.
+        // 模块去哪儿找
         new ModuleScopePlugin(paths.appSrc, [
           paths.appPackageJson,
           reactRefreshOverlayEntry,
@@ -376,6 +383,7 @@ module.exports = function (webpackEnv) {
           // "oneOf" will traverse all following loaders until one will
           // match the requirements. When no loader matches it will fall
           // back to the "file" loader at the end of the loader list.
+          // 优化：有且只有一个会被执行到
           oneOf: [
             // TODO: Merge this config once `image/avif` is in the mime-db
             // https://github.com/jshttp/mime-db
@@ -490,10 +498,12 @@ module.exports = function (webpackEnv) {
               // containing package claims to have no side effects.
               // Remove this when webpack adds a warning or an error for this.
               // See https://github.com/webpack/webpack/issues/6571
+              // 表示都有副作用，不要用 tree-shaking
               sideEffects: true,
             },
             // Adds support for CSS Modules (https://github.com/css-modules/css-modules)
             // using the extension .module.css
+            // modules 避免全局样式冲突 .module.css js 中用 css 时
             {
               test: cssModuleRegex,
               use: getStyleLoaders({
@@ -549,6 +559,7 @@ module.exports = function (webpackEnv) {
             // In production, they would get copied to the `build` folder.
             // This loader doesn't use a "test" so it will catch all modules
             // that fall through the other loaders.
+            // 没有处理好的文件，原封不动的处理完
             {
               loader: require.resolve('file-loader'),
               // Exclude `js` files to keep "css" loader working as it injects
@@ -575,6 +586,7 @@ module.exports = function (webpackEnv) {
             inject: true,
             template: paths.appHtml,
           },
+          // 生产环境，html 压缩
           isEnvProduction
             ? {
                 minify: {
@@ -596,6 +608,8 @@ module.exports = function (webpackEnv) {
       // Inlines the webpack runtime script. This script is too small to warrant
       // a network request.
       // https://github.com/facebook/create-react-app/issues/5358
+      // runtime 长期缓存的文件，是否内联 runtime 文件，少发一个请求
+      // cross-env INLINE_RUNTIME_CHUNK=true
       isEnvProduction &&
         shouldInlineRuntimeChunk &&
         new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
@@ -604,17 +618,21 @@ module.exports = function (webpackEnv) {
       // <link rel="icon" href="%PUBLIC_URL%/favicon.ico">
       // It will be an empty string unless you specify "homepage"
       // in `package.json`, in which case it will be the pathname of that URL.
+      // 解析 public/index.html & PUBLIC_URL
       new InterpolateHtmlPlugin(HtmlWebpackPlugin, env.raw),
       // This gives some necessary context to module not found errors, such as
       // the requesting resource.
+      // 给Module 更好的提示
       new ModuleNotFoundPlugin(paths.appPath),
       // Makes some environment variables available to the JS code, for example:
       // if (process.env.NODE_ENV === 'production') { ... }. See `./env.js`.
       // It is absolutely essential that NODE_ENV is set to production
       // during a production build.
       // Otherwise React will be compiled in the very slow development mode.
+      // 定义环境变量
       new webpack.DefinePlugin(env.stringified),
       // This is necessary to emit hot updates (CSS and Fast Refresh):
+      // 热模块替换
       isEnvDevelopment && new webpack.HotModuleReplacementPlugin(),
       // Experimental hot reloading for React .
       // https://github.com/facebook/react/tree/master/packages/react-refresh
@@ -634,13 +652,17 @@ module.exports = function (webpackEnv) {
       // Watcher doesn't work well if you mistype casing in a path so we use
       // a plugin that prints an error when you attempt to do this.
       // See https://github.com/facebook/create-react-app/issues/240
+      // 文件路径：严格区分大小写
       isEnvDevelopment && new CaseSensitivePathsPlugin(),
       // If you require a missing module and then `npm install` it, you still have
       // to restart the development server for webpack to discover it. This plugin
       // makes the discovery automatic so you don't have to restart.
       // See https://github.com/facebook/create-react-app/issues/186
+      // 监控丢失模块，会自动重启。 不需要 restart。
+      // 监视node-modules，一旦发生变化，会重启devserver
       isEnvDevelopment &&
         new WatchMissingNodeModulesPlugin(paths.appNodeModules),
+        // 提取css成单独文件
       isEnvProduction &&
         new MiniCssExtractPlugin({
           // Options similar to the same options in webpackOptions.output
@@ -677,13 +699,14 @@ module.exports = function (webpackEnv) {
       // solution that requires the user to opt into importing specific locales.
       // https://github.com/jmblog/how-to-optimize-momentjs-with-webpack
       // You can remove this if you don't use Moment.js:
+      // 推荐 dayjs，不推荐 moment
       new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
       // Generate a service worker script that will precache, and keep up to date,
       // the HTML & assets that are part of the webpack build.
       isEnvProduction &&
         fs.existsSync(swSrc) &&
         new WorkboxWebpackPlugin.InjectManifest({
-          swSrc,
+          swSrc, 
           dontCacheBustURLsMatching: /\.[0-9a-f]{8}\./,
           exclude: [/\.map$/, /asset-manifest\.json$/, /LICENSE/],
           // Bump up the default maximum size (2mb) that's precached,
@@ -744,6 +767,7 @@ module.exports = function (webpackEnv) {
     ].filter(Boolean),
     // Some libraries import Node modules but don't use them in the browser.
     // Tell webpack to provide empty mocks for them so importing them works.
+    // 避免浏览器端，webpack5 不打包这些
     node: {
       module: 'empty',
       dgram: 'empty',
@@ -756,6 +780,7 @@ module.exports = function (webpackEnv) {
     },
     // Turn off performance processing because we utilize
     // our own hints via the FileSizeReporter
+    // 关闭性能提示，打包性能很卡
     performance: false,
   };
 };
