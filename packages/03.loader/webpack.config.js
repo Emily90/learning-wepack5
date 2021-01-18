@@ -6,23 +6,23 @@ module.exports = {
       {
         test: /\.js$/,
         // loader: path.resolve(__dirname, 'loaders', 'loader1')
-        use: [
-          // 'loader1',
-          // 'loader2',
-          // {
-          //   loader: 'loader3',
-          //   options: {
-          //     name: 'jack',
-          //     age: 18,
-          //   }
-          // },
-          {
-            loader: 'babelLoader',
-            options: {
-              "present"
-            },
-          }
-        ]
+        // use: [
+        //   'loader1',
+        //   'loader2',
+        //   {
+        //     loader: 'loader3',
+        //     options: {
+        //       name: 'jack',
+        //       age: 18,
+        //     }
+        //   },
+        // ],
+        loader: 'babelLoader',
+        options: {
+          presets: [
+            "@babel/preset-env"
+          ]
+        },
       }
     ]
   },

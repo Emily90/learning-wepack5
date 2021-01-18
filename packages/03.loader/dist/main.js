@@ -1,1 +1,1 @@
-console.log("hello webpack");
+(()=>{"use strict";function e(e,n){for(var a=0;a<n.length;a++){var o=n[a];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(e,o.key,o)}}console.log("hello webpack");var n=function(){function n(e){!function(e,n){if(!(e instanceof n))throw new TypeError("Cannot call a class as a function")}(this,n),this.name=e}var a,o;return a=n,(o=[{key:"setName",value:function(e){this.name=e}}])&&e(a.prototype,o),n}();console.log(new n("jack"))})();
