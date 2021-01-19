@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const {
   getAst,
   getDeps,
@@ -64,10 +66,11 @@ class Compiler {
           deps: module.deps,
         }
       }
-    });
+    }, {});
 
     console.log(depsGraph);
 
+    this.generate(depsGraph);
     // console.log(46, this.modules);
   }
 
@@ -87,6 +90,56 @@ class Compiler {
       // 当前文件解析后的代码
       code,
     }
+  }
+
+  // 开始构建
+  generate(depsGraph) {
+    /**
+     * index.js
+     * "use strict";\n' +
+      '\n' +
+      'var _add = _interopRequireDefault(require("./add.js"));\n' +
+      '\n' +
+      'var _count = _interopRequireDefault(require("./count.js"));\n' +
+      '\n' +
+      'function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }\n' +
+      '\n' +
+      'console.log((0, _add["default"])(1, 2));\n' +
+      'console.log((0, _count["default"])(3, 1));
+     */
+    const bundle = `
+      (function(depsGraph){
+        // require 目的：加载入口文件
+        function require(module) {
+          // eval(depsGraph[module].code);
+
+          // 模块内部的require函数
+          function localRequire(relativePath) {
+            // 为了找到要引入模块的绝对路径，通过require加载
+            return require(depsGraph[module].deps[relativePath]);
+          }
+          
+          // 定义暴露对象（将来模块要暴露的内容）
+          var exports = {};
+
+          (function(require, exports, code) {
+            eval(code);
+          }(localRequire, exports, depsGraph[module].code))
+
+          // 作为require函数的返回值返回出去
+          // 后面的require函数能得到暴露的内容
+          return exports;
+        }
+
+        // 加载入口文件
+        require('${this.options.entry}');
+      })(${JSON.stringify(depsGraph)})
+    `;
+
+    // 生成路径绝对路径
+    const filePath = path.resolve(this.options.output.path, this.options.output.filename);
+    // 字符串形式utf-8
+    fs.writeFileSync(filePath, bundle, 'utf-8');
   }
 }
 
