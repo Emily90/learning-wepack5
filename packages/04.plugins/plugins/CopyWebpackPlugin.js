@@ -69,7 +69,8 @@ class CopyWebpackPlugin {
             filename: file.filename,
           }
         })
-        // 添加到 compilation 中，输出出去
+
+        // 4. 添加到 compilation 中，输出出去
         assets.forEach((asset) => {
           compilation.emitAsset(asset.filename, asset.source);
         });
