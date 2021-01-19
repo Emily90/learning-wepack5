@@ -1,4 +1,10 @@
 {
+  "name": "03.loader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@babel/preset-env": "^7.12.11",
     "webpack": "^5.15.0",
