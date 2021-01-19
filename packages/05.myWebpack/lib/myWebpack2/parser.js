@@ -14,7 +14,7 @@ const parser = {
         sourceType: 'module', // 解析文件的模块化方法是ES module
       });
   
-      // console.log(ast);
+      console.log(ast);
       return ast;
   },
   // 获取依赖
@@ -38,7 +38,7 @@ const parser = {
       }
     })
 
-    // console.log(deps);
+    console.log(deps);
     return deps;
   },
   // 解析ast成code
@@ -48,7 +48,7 @@ const parser = {
       presets: ['@babel/preset-env']
     });
 
-    // console.log(code);
+    console.log(code);
 
     return code;
   }
